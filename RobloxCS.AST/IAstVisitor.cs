@@ -66,6 +66,8 @@ public interface IAstVisitor {
     void VisitNumericFor(NumericFor node);
     void VisitGenericFor(GenericFor node);
     void VisitRepeat(Repeat node);
+    void VisitGoto(Goto node);
+    void VisitLabel(Label node);
 
     void VisitAnonymousCall(AnonymousCall node);
     void VisitMethodCall(MethodCall node);
@@ -152,6 +154,8 @@ public interface IAstVisitor<out T> where T : AstNode {
     T VisitNumericFor(NumericFor node);
     T VisitGenericFor(GenericFor node);
     T VisitRepeat(Repeat node);
+    T VisitGoto(Goto node);
+    T VisitLabel(Label node);
 
     T VisitAnonymousCall(AnonymousCall node);
     T VisitMethodCall(MethodCall node);

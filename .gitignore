@@ -1,0 +1,13 @@
+.vs/
+.idea/
+Properties/
+
+RobloxCS.Tests/**/out
+RobloxCS.Tests/**/include
+RobloxCS.Tests/**/package-lock.json
+*.DotSettings.user
+**/test.cs
+RobloxCS/GlobalUsings.cs
+
+obj/
+bin/

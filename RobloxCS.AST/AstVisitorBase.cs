@@ -74,6 +74,8 @@ public class AstVisitorBase : IAstVisitor {
     public virtual void VisitNumericFor(NumericFor node) => DefaultVisit(node);
     public virtual void VisitGenericFor(GenericFor node) => DefaultVisit(node);
     public virtual void VisitRepeat(Repeat node) => DefaultVisit(node);
+    public virtual void VisitGoto(Goto node) => DefaultVisit(node);
+    public virtual void VisitLabel(Label node) => DefaultVisit(node);
 
     public virtual void VisitAnonymousCall(AnonymousCall node) => DefaultVisit(node);
     public virtual void VisitMethodCall(MethodCall node) => DefaultVisit(node);

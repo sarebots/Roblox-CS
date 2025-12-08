@@ -32,6 +32,15 @@ internal static class TransformerRegistry
         MethodGroupExpressionTransformer.Register();
         SwitchExpressionTransformer.Register();
         UnaryExpressionTransformer.Register();
+        IdentifierNameTransformer.Register();
+        MemberAccessExpressionTransformer.Register();
+        ParenthesizedExpressionTransformer.Register();
+        ThisExpressionTransformer.Register();
+        BaseExpressionTransformer.Register();
+        InterpolatedStringExpressionTransformer.Register();
+        LambdaExpressionTransformer.Register();
+        CastExpressionTransformer.Register();
+        IsPatternExpressionTransformer.Register();
         DoStatementTransformer.Register();
         ForStatementTransformer.Register();
         ForEachStatementTransformer.Register();
@@ -41,6 +50,15 @@ internal static class TransformerRegistry
         TryStatementTransformer.Register();
         WhileStatementTransformer.Register();
         YieldStatementTransformer.Register();
+        ReturnStatementTransformer.Register();
+        BreakStatementTransformer.Register();
+        ContinueStatementTransformer.Register();
+        ExpressionStatementTransformer.Register();
+        BlockTransformer.Register();
+        LocalDeclarationStatementTransformer.Register();
+        ThrowStatementTransformer.Register();
+        GotoStatementTransformer.Register();
+        LabeledStatementTransformer.Register();
 
         EnumDeclarationTransformer.Register();
         RecordDeclarationTransformer.Register();

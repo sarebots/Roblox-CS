@@ -32,6 +32,8 @@ internal static class BinaryExpressionTransformer
         SyntaxKind.NotEqualsExpression,
         SyntaxKind.LogicalAndExpression,
         SyntaxKind.LogicalOrExpression,
+        SyntaxKind.IsExpression,
+        SyntaxKind.AsExpression,
     };
 
     public static void Register()
@@ -49,10 +51,26 @@ internal static class BinaryExpressionTransformer
             return context.BuildExpressionWithoutTransformers(syntax);
         }
 
-        var mappedOperator = StandardUtility.GetMappedOperator(binary.OperatorToken.Text);
         var leftExpression = context.BuildExpression(binary.Left);
         var rightExpression = context.BuildExpression(binary.Right);
 
+        if (binary.IsKind(SyntaxKind.IsExpression))
+        {
+             // x is T -> TypeCheck(x, T)
+             // We need a runtime helper for this: CS.is(x, T)
+             // For now, let's emit a placeholder call.
+             // TODO: Implement proper type checking logic (primitives vs classes vs Roblox types).
+             return FunctionCallAst.Basic("CS.is", leftExpression, rightExpression);
+        }
+        
+        if (binary.IsKind(SyntaxKind.AsExpression))
+        {
+             // x as T -> CS.as(x, T)
+             // Helper: function(x, T) return CS.is(x, T) and x or nil end
+             return FunctionCallAst.Basic("CS.as", leftExpression, rightExpression);
+        }
+
+        var mappedOperator = StandardUtility.GetMappedOperator(binary.OperatorToken.Text);
         var bit32Method = StandardUtility.GetBit32MethodName(mappedOperator);
         if (bit32Method is not null)
         {
