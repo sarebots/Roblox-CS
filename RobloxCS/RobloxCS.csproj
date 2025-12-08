@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <RootNamespace>RobloxCS</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Version>2.0.0-pre10</Version>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis" Version="4.12.0"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0"/>
+        <ProjectReference Include="..\RobloxCS.AST\RobloxCS.AST.csproj"/>
+        <ProjectReference Include="..\RobloxCS.Renderer\RobloxCS.Renderer.csproj"/>
+        <ProjectReference Include="..\RobloxCS.Luau\RobloxCS.Luau.csproj"/>
+        <ProjectReference Include="..\RobloxCS.Shared\RobloxCS.Shared.csproj"/>
+        <ProjectReference Include="..\RobloxCS.Types\RobloxCS.Types.csproj"/>
+        <None Include=".\test.cs"/>
+        <Compile Remove=".\test.cs"/>
+    </ItemGroup>
+
+</Project>

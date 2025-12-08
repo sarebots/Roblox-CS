@@ -1,0 +1,5 @@
+SourceFolder: .
+OutputFolder: out
+RojoProjectName: runtime-specs
+EntryPointArguments: []
+RojoServePort: 34872

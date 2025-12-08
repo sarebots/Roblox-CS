@@ -1,0 +1,184 @@
+using RobloxCS.AST.Expressions;
+using RobloxCS.AST.Functions;
+using RobloxCS.AST.Generics;
+using RobloxCS.AST.Parameters;
+using RobloxCS.AST.Prefixes;
+using RobloxCS.AST.Statements;
+using RobloxCS.AST.Suffixes;
+using RobloxCS.AST.Types;
+
+namespace RobloxCS.AST;
+
+public interface IAstVisitor {
+    void VisitBlock(Block node);
+    void VisitChunk(Chunk node);
+    void VisitExpression(Expression node);
+    void VisitFunctionArgs(FunctionArgs node);
+    void VisitFunctionBody(FunctionBody node);
+    void VisitFunctionName(FunctionName node);
+    void VisitParameter(Parameter node);
+    void VisitPrefix(Prefix node);
+    void VisitStatement(Statement node);
+    void VisitSuffix(Suffix node);
+    void VisitVar(Var node);
+
+    void VisitAnonymousFunction(AnonymousFunction node);
+    void VisitBinaryOperatorExpression(BinaryOperatorExpression node);
+    void VisitBooleanExpression(BooleanExpression node);
+    void VisitUnaryOperatorExpression(UnaryOperatorExpression node);
+    void VisitIndexExpression(IndexExpression node);
+    void VisitFunctionCall(FunctionCall node);
+    void VisitNumberExpression(NumberExpression node);
+    void VisitStringExpression(StringExpression node);
+    void VisitInterpolatedStringExpression(InterpolatedStringExpression node);
+    void VisitInterpolatedStringTextPart(InterpolatedStringTextPart node);
+    void VisitInterpolatedStringExpressionPart(InterpolatedStringExpressionPart node);
+    void VisitSymbolExpression(SymbolExpression node);
+    void VisitTableConstructor(TableConstructor node);
+    void VisitTableField(TableField node);
+    void VisitNoKey(NoKey node);
+    void VisitNameKey(NameKey node);
+    void VisitComputedKey(ComputedKey node);
+    void VisitTypeAssertionExpression(TypeAssertionExpression node);
+
+    void VisitGenericDeclaration(GenericDeclaration node);
+    void VisitGenericDeclarationParameter(GenericDeclarationParameter node);
+    void VisitGenericParameterInfo(GenericParameterInfo node);
+    void VisitNameGenericParameter(NameGenericParameter node);
+    void VisitVariadicGenericParameter(VariadicGenericParameter node);
+
+    void VisitEllipsisParameter(EllipsisParameter node);
+    void VisitNameParameter(NameParameter node);
+
+    void VisitExpressionPrefix(ExpressionPrefix node);
+    void VisitNamePrefix(NamePrefix node);
+
+    void VisitAssignment(Assignment node);
+    void VisitDoStatement(DoStatement node);
+    void VisitFunctionDeclaration(FunctionDeclaration node);
+    void VisitLocalAssignment(LocalAssignment node);
+    void VisitFunctionCallStatement(FunctionCallStatement node);
+    void VisitReturn(Return node);
+    void VisitBreak(Break node);
+    void VisitContinue(Continue node);
+    void VisitIf(If node);
+    void VisitWhile(While node);
+    void VisitNumericFor(NumericFor node);
+    void VisitGenericFor(GenericFor node);
+    void VisitRepeat(Repeat node);
+
+    void VisitAnonymousCall(AnonymousCall node);
+    void VisitMethodCall(MethodCall node);
+    void VisitCall(Call node);
+
+    void VisitArrayTypeInfo(ArrayTypeInfo node);
+    void VisitBasicTypeInfo(BasicTypeInfo node);
+    void VisitBooleanTypeInfo(BooleanTypeInfo node);
+    void VisitCallbackTypeInfo(CallbackTypeInfo node);
+    void VisitIntersectionTypeInfo(IntersectionTypeInfo node);
+    void VisitOptionalTypeInfo(OptionalTypeInfo node);
+    void VisitStringTypeInfo(StringTypeInfo node);
+    void VisitTableTypeInfo(TableTypeInfo node);
+    void VisitTupleTypeInfo(TupleTypeInfo node);
+    void VisitTypeArgument(TypeArgument node);
+    void VisitTypeDeclaration(TypeDeclaration node);
+    void VisitTypeField(TypeField node);
+    void VisitTypeFieldKey(TypeFieldKey node);
+    void VisitNameTypeFieldKey(NameTypeFieldKey node);
+    void VisitIndexSignatureFieldKey(IndexSignatureTypeFieldKey node);
+    void VisitTypeOfTypeInfo(TypeOfTypeInfo node);
+    void VisitTypeInfo(TypeInfo node);
+    void VisitVariadicTypeInfo(VariadicTypeInfo node);
+    void VisitUnionTypeInfo(UnionTypeInfo node);
+
+    void VisitVarExpression(VarExpression node);
+    void VisitVarName(VarName node);
+
+    void DefaultVisit(AstNode node);
+}
+
+public interface IAstVisitor<out T> where T : AstNode {
+    T VisitBlock(Block node);
+    T VisitChunk(Chunk node);
+    T VisitExpression(Expression node);
+    T VisitFunctionArgs(FunctionArgs node);
+    T VisitFunctionBody(FunctionBody node);
+    T VisitFunctionName(FunctionName node);
+    T VisitParameter(Parameter node);
+    T VisitPrefix(Prefix node);
+    T VisitStatement(Statement node);
+    T VisitSuffix(Suffix node);
+    T VisitVar(Var node);
+
+    T VisitAnonymousFunction(AnonymousFunction node);
+    T VisitBinaryOperatorExpression(BinaryOperatorExpression node);
+    T VisitBooleanExpression(BooleanExpression node);
+    T VisitUnaryOperatorExpression(UnaryOperatorExpression node);
+    T VisitIndexExpression(IndexExpression node);
+    T VisitFunctionCall(FunctionCall node);
+    T VisitNumberExpression(NumberExpression node);
+    T VisitStringExpression(StringExpression node);
+    T VisitInterpolatedStringExpression(InterpolatedStringExpression node);
+    T VisitInterpolatedStringTextPart(InterpolatedStringTextPart node);
+    T VisitInterpolatedStringExpressionPart(InterpolatedStringExpressionPart node);
+    T VisitSymbolExpression(SymbolExpression node);
+    T VisitTableConstructor(TableConstructor node);
+    T VisitNoKey(NoKey node);
+    T VisitNameKey(NameKey node);
+    T VisitComputedKey(ComputedKey node);
+    T VisitTypeAssertionExpression(TypeAssertionExpression node);
+
+    T VisitGenericDeclaration(GenericDeclaration node);
+    T VisitGenericDeclarationParameter(GenericDeclarationParameter node);
+    T VisitGenericParameterInfo(GenericParameterInfo node);
+    T VisitNameGenericParameter(NameGenericParameter node);
+    T VisitVariadicGenericParameter(VariadicGenericParameter node);
+
+    T VisitEllipsisParameter(EllipsisParameter node);
+    T VisitNameParameter(NameParameter node);
+
+    T VisitExpressionPrefix(ExpressionPrefix node);
+    T VisitNamePrefix(NamePrefix node);
+
+    T VisitAssignment(Assignment node);
+    T VisitDoStatement(DoStatement node);
+    T VisitFunctionDeclaration(FunctionDeclaration node);
+    T VisitLocalAssignment(LocalAssignment node);
+    T VisitReturn(Return node);
+    T VisitBreak(Break node);
+    T VisitContinue(Continue node);
+    T VisitIf(If node);
+    T VisitWhile(While node);
+    T VisitNumericFor(NumericFor node);
+    T VisitGenericFor(GenericFor node);
+    T VisitRepeat(Repeat node);
+
+    T VisitAnonymousCall(AnonymousCall node);
+    T VisitMethodCall(MethodCall node);
+    T VisitCall(Call node);
+
+    T VisitArrayTypeInfo(ArrayTypeInfo node);
+    T VisitBasicTypeInfo(BasicTypeInfo node);
+    T VisitBooleanTypeInfo(BooleanTypeInfo node);
+    T VisitCallbackTypeInfo(CallbackTypeInfo node);
+    T VisitIntersectionTypeInfo(IntersectionTypeInfo node);
+    T VisitOptionalTypeInfo(OptionalTypeInfo node);
+    T VisitStringTypeInfo(StringTypeInfo node);
+    T VisitTableTypeInfo(TableTypeInfo node);
+    T VisitTupleTypeInfo(TupleTypeInfo node);
+    T VisitTypeArgument(TypeArgument node);
+    T VisitTypeDeclaration(TypeDeclaration node);
+    T VisitTypeField(TypeField node);
+    T VisitTypeFieldKey(TypeFieldKey node);
+    T VisitNameTypeFieldKey(NameTypeFieldKey node);
+    T VisitIndexSignatureFieldKey(IndexSignatureTypeFieldKey node);
+    T VisitTypeOfTypeInfo(TypeOfTypeInfo node);
+    T VisitTypeInfo(TypeInfo node);
+    T VisitVariadicTypeInfo(VariadicTypeInfo node);
+    T VisitUnionTypeInfo(UnionTypeInfo node);
+
+    T VisitVarExpression(VarExpression node);
+    T VisitVarName(VarName node);
+
+    T DefaultVisit(AstNode node);
+}

@@ -1,0 +1,10 @@
+{
+  "name": "__PROJECT_NAME__",
+  "tree": {
+    "$className": "DataModel",
+    "__PROJECT_NAME__": {
+      "$className": "Folder",
+      "$path": "out"
+    }
+  }
+}

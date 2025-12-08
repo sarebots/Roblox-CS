@@ -1,0 +1,29 @@
+{
+  "name": "runtime-specs",
+  "tree": {
+    "$className": "Folder",
+    "Runtime": {
+      "$path": "RobloxCS.Runtime"
+    }
+  },
+  "specs": [
+    {
+      "path": "Promise"
+    },
+    {
+      "path": "String"
+    },
+    {
+      "path": "Generators"
+    },
+    {
+      "path": "Patterns"
+    },
+    {
+      "path": "Using"
+    },
+    {
+      "path": "Macros"
+    }
+  ]
+}

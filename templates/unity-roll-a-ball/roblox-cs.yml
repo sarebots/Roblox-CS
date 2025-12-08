@@ -1,0 +1,7 @@
+SourceFolder: src
+OutputFolder: out
+EntryPointArguments: []
+RojoProjectName: default
+RojoServePort: 34872
+Plugins: []
+EnableUnityAliases: true

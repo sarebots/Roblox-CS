@@ -1,0 +1,13 @@
+{
+  "name": "__PROJECT_NAMESPACE__StarterRoom",
+  "description": "Placeholder Roll-a-Ball stage for __PROJECT_NAME__ until you replace it with Studio-authored assets.",
+  "layout": {
+    "platformRadius": 24,
+    "collectibleCount": 12,
+    "spawnPoints": [
+      "StarterArea",
+      "NorthArc",
+      "SouthArc"
+    ]
+  }
+}

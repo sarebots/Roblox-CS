@@ -1,0 +1,5 @@
+templates:
+  - id: unity-roll-a-ball
+    label: Unity Roll-a-Ball
+    path: unity-roll-a-ball
+    description: Classic Unity Roll-a-Ball microgame scaffold for roblox-cs.
