@@ -24,7 +24,23 @@
     - `TS.iter` for efficient table iteration.
 - **Runtime Library**: A lightweight runtime handling `System.Math`, Collections (`List`, `Dictionary`, `HashSet`), and Exception handling.
 
-## 🚀 Getting Started
+## � Features & Limitations
+
+| Feature | Support Status | Notes |
+| :--- | :--- | :--- |
+| **Classes & Objects** | ✅ Full Support | Inheritance, Virtual/Override, Static Members. |
+| **Structs** | ⚠️ Partial | Supported as data containers. Instance methods on structs are **not supported**. |
+| **Interfaces** | ✅ Full Support | Default interface implementations are not supported. |
+| **Generics** | ✅ Full Support | Fully reified at runtime (unlike TypeScript erasure). |
+| **Async/Await** | ✅ Full Support | Maps to `Promise` library. `Task.WhenAll` -> `Promise.All`. |
+| **Lambdas/Delegates** | ✅ Full Support | Closures are correctly captured. |
+| **Pattern Matching** | ✅ Full Support | `switch` expressions, recursive patterns, property patterns. |
+| **Records** | ❌ Not Supported | Planned for future V2 update. |
+| **Arrays** | ⚠️ Partial | Single-dimensional arrays only. Multi-dimensional (`[,]`) arrays are not supported. |
+| **Exceptions** | ✅ Full Support | `try/catch/finally` maps to `xpcall`. |
+| **LINQ** | ❌ Not Supported | Use `foreach` loops or `List<T>` methods for best performance. |
+
+## �🚀 Getting Started
 
 ### 1. Installation
 Download the latest release or build from source using the .NET SDK.

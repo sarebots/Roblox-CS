@@ -6,7 +6,7 @@ namespace __PROJECT_NAMESPACE__.UI;
 public sealed class Scoreboard
 {
     private readonly List<string> _players = new();
-    private readonly Dictionary<string, int> _scores = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, int> _scores = new();
 
     public IReadOnlyList<string> Players => _players;
     public IReadOnlyDictionary<string, int> Scores => _scores;

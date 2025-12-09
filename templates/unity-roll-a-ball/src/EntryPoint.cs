@@ -9,8 +9,8 @@ public static class EntryPoint
     {
         var projectName = "__PROJECT_NAME__";
         var loop = new GameLoop();
-        var winner = Promise.Await(loop.PlayRoundAsync());
+        var winner = Promise.GetAwaitResult(loop.PlayRoundAsync()).Value!;
         var score = loop.GetScore(winner);
-        System.Console.WriteLine($"Bootstrapping {projectName}... {winner} reached {score} points!");
+        Roblox.Globals.print($"Bootstrapping {projectName}... {winner} reached {score} points!");
     }
 }
