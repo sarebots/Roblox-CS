@@ -42,7 +42,7 @@ public static class TranspilerUtility
     {
         var root = (CompilationUnitSyntax)file.Tree.GetRoot();
         var macroOptions = file.Config.Macro ?? new MacroOptions();
-        var options = new TranspilerOptions(scriptType, macroOptions);
+        var options = new TranspilerOptions(scriptType, macroOptions, file.RojoProject);
         SymbolMetadataManager.Clear();
         var context = new TranspilationContext(options, compiler, root);
         var transpiler = new CSharpTranspiler(context);

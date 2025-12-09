@@ -38,7 +38,11 @@ public sealed class Scoreboard
 
     public int GetScore(string name)
     {
-        return _scores.TryGetValue(name, out var score) ? score : 0;
+        if (_scores.TryGetValue(name, out var score))
+        {
+            return score;
+        }
+        return 0;
     }
 
     public bool TryGetWinner(int targetScore, out string winner)

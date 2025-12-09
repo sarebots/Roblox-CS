@@ -139,7 +139,8 @@ public class StatementBuilder {
         }
         else if (methodSymbol is { IsStatic: true, ContainingType: { } containingType })
         {
-            callName = $"{containingType.Name}.{methodSymbol.Name}";
+            ctx.AddDependency(containingType);
+            callName = $"{ctx.GetTypeName(containingType)}.{methodSymbol.Name}";
         }
         else
         {

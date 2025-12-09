@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -7,7 +6,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using RobloxCS.AST;
 using RobloxCS.AST.Expressions;
 using RobloxCS.AST.Statements;
+using RobloxCS.TranspilerV2.Nodes;
 using RobloxCS.TranspilerV2.Scoping;
+using RobloxCS.Shared;
 
 namespace RobloxCS.TranspilerV2;
 
@@ -28,6 +29,7 @@ public sealed class TranspilationContext {
     private readonly List<string> _typePredeclarationOrder = new();
     private readonly HashSet<string> _typePredeclarations = new(StringComparer.Ordinal);
     private readonly Stack<GeneratorScope> _generatorScopes = new();
+    private readonly HashSet<INamedTypeSymbol> _dependencies = new(SymbolEqualityComparer.Default);
     private bool _signalImportAdded;
 
     public string AllocateTempName(params string[] parts)
@@ -121,6 +123,8 @@ public sealed class TranspilationContext {
         if (statement is null) throw new ArgumentNullException(nameof(statement));
         _pendingPrerequisites.Add(statement);
     }
+
+
 
     public string EnsureTypePredeclaration(INamedTypeSymbol symbol)
     {
@@ -291,6 +295,7 @@ public sealed class TranspilationContext {
     }
 
     public Chunk ToChunk() {
+        GenerateImports();
         PrependTypePredeclarations();
         NormalizeReturnStatements();
         return new Chunk { Block = RootBlock };
@@ -365,6 +370,151 @@ public sealed class TranspilationContext {
         }
 
         RootBlock.Statements.InsertRange(0, remaining);
+    }
+
+    public void AddDependency(INamedTypeSymbol symbol)
+    {
+        if (symbol.ContainingAssembly.Name != Compilation.AssemblyName)
+        {
+            // For now, only track dependencies within the same compilation
+            // External references would need config mapping
+             _dependencies.Add(symbol);
+             return;
+        }
+
+        // Check if the symbol is defined in the current file options
+        // This is a rough check. Ideally we compare syntax trees.
+        if (symbol.Locations.Any(loc => loc.SourceTree == Root.SyntaxTree))
+        {
+            return;
+        }
+
+        _dependencies.Add(symbol);
+    }
+
+    private void GenerateImports()
+    {
+        if (Options.RojoProject is null) return;
+
+        var currentFilePath = Root.SyntaxTree.FilePath;
+        var imports = new Dictionary<string, string>(StringComparer.Ordinal); // ClassName -> Path
+
+        // Always add RobloxCS.Runtime helpers if needed
+        // For now we assume they are globally available or injected via defineGlobal? 
+        // Actually, the user report says "unknown global Roblox". 
+        // V1 likely handled this via implicit imports too.
+
+        if (_signalImportAdded)
+        {
+            var includePath = "game:GetService(\"ReplicatedStorage\"):WaitForChild(\"include\")";
+            var includeStmt = new LocalAssignment
+            {
+                Names = [SymbolExpression.FromString("rbxcs_include")],
+                Expressions = [SymbolExpression.FromString(includePath)],
+                Types = []
+            };
+            RootBlock.Statements.Insert(0, includeStmt);
+        }
+
+        foreach (var dep in _dependencies)
+        {
+            var className = Options.RojoProject.EmitLegacyScripts ? dep.Name : dep.Name; 
+            if (imports.ContainsKey(className)) continue;
+
+            string? requirePath = null;
+            
+            if (dep.ContainingNamespace?.ToString().StartsWith("Roblox") == true)
+            {
+                // Fallback for runtime types
+                var runtimePath = "game:GetService(\"ReplicatedStorage\"):WaitForChild(\"RobloxCS.Runtime\")";
+                requirePath = $"{runtimePath}:WaitForChild(\"{dep.Name}\")"; // Use WaitForChild for safety
+            }
+            else
+            {
+                 var loc = dep.Locations.FirstOrDefault(l => l.IsInSource);
+                 if (loc != null)
+                 {
+                     var depPath = loc.SourceTree!.FilePath;
+                     var currentPath = Root.SyntaxTree.FilePath;
+                     
+                     // Use relative path for internal dependencies
+                     var currentDir = Path.GetDirectoryName(currentPath);
+                     var depDir = Path.GetDirectoryName(depPath);
+
+                     if (currentDir != null && depDir != null)
+                     {
+                         var relativePath = Path.GetRelativePath(currentDir, depDir);
+                         var parts = relativePath.Split(Path.DirectorySeparatorChar);
+                         
+                         // Start at script.Parent (the container of the current script)
+                         var builder = new System.Text.StringBuilder("script.Parent");
+                         
+                         foreach (var part in parts)
+                         {
+                             if (part == ".") continue;
+                             if (part == "..") 
+                             {
+                                 builder.Append(".Parent");
+                             }
+                             else
+                             {
+                                 builder.Append($":WaitForChild(\"{part}\")"); // Use WaitForChild for folders for safety? Or just dot. 
+                                 // Folders usually exist immediately in ReplicatedStorage, but WaitForChild is safer for streaming/loading order.
+                                 // However, standard require usually uses dot access for siblings.
+                                 // Let's use dot access for folders to be cleaner, WaitForChild for the final module?
+                                 // Actually, usually dot access is fine for server/shared scripts.
+                                 // But let's stick to dot for folders.
+                                 // Wait, if it's "script.Parent.UI", that's fine.
+                                 // But if I use names, I need to match valid identifier logic.
+                                 // For now, dot access.
+                                 // Correction: Use WaitForChild for cross-directory if safest, but messy.
+                                 // Let's use ["Name"] or .Name.
+                                 builder.Append($".{part}");
+                             }
+                         }
+                         
+                         // Append the module name. Use WaitForChild for the module itself as it might be a script not yet loaded?
+                         // Server scripts load together. ModuleScripts too.
+                         // But require(script.Parent.Module) is standard.
+                         builder.Append($".{dep.Name}");
+                         requirePath = builder.ToString();
+                     }
+                     else
+                     {
+                         // Fallback to Rojo resolution if relative path calculation fails (shouldn't happen for valid paths)
+                         var robloxPath = RojoReader.ResolveInstancePath(Options.RojoProject, depPath);
+                         if (robloxPath != null)
+                         {
+                              requirePath = robloxPath.StartsWith("game") ? robloxPath : $"game.{robloxPath}";
+                         }
+                     }
+                 }
+            }
+            
+            if (requirePath != null)
+            {
+                imports[className] = requirePath;
+            }
+        }
+
+        // Emit import statements
+        // We insert them at the top. 
+        // If signal import was added, it inserted 'Signal', then we inserted 'rbxcs_include' at 0.
+        // So 'rbxcs_include' is at 0, 'Signal' is at 1.
+        // We want other imports after these.
+        var index = _signalImportAdded ? 2 : 0;
+        
+        foreach (var kvp in imports.OrderBy(x => x.Key))
+        {
+            var call = FunctionCall.Basic("require", SymbolExpression.FromString(kvp.Value));
+            var stmt = new LocalAssignment
+            {
+                Names = [SymbolExpression.FromString(kvp.Key)],
+                Expressions = [call],
+                Types = [],
+            };
+            RootBlock.Statements.Insert(index++, stmt);
+        }
     }
 
     private sealed class SymbolAliasScope : IDisposable

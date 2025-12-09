@@ -345,9 +345,7 @@ internal static Expression HandleImplicitObjectCreationExpressionLegacy(Implicit
             return BuildTableConstructor(syntax.Initializer, ctx);
         }
 
-        if (IsDictionaryType(typeSymbol)) {
-            return TableConstructor.Empty();
-        }
+
 
         var namedTypeSymbol = typeSymbol as INamedTypeSymbol;
         var typeName = namedTypeSymbol?.Name ?? namedTypeSymbol?.ToDisplayString() ?? "Anonymous";
@@ -567,7 +565,7 @@ internal static Expression HandleImplicitObjectCreationExpressionLegacy(Implicit
     {
         if (methodSymbol.IsStatic)
         {
-            var staticReference = $"{ctx.GetTypeName(methodSymbol.ContainingType)}.{methodSymbol.Name}";
+            var staticReference = $"{BuildTypeAccess(methodSymbol.ContainingType, ctx)}.{methodSymbol.Name}";
             return SymbolExpression.FromString(staticReference);
         }
 
@@ -790,13 +788,13 @@ internal static Expression HandleImplicitObjectCreationExpressionLegacy(Implicit
             IFieldSymbol { ContainingType.TypeKind: TypeKind.Enum, HasConstantValue: true } enumField
                 => CreateConstantExpression(enumField.ConstantValue),
             IFieldSymbol fieldSymbol => fieldSymbol.IsStatic
-                ? SymbolExpression.FromString($"{ctx.GetTypeName(fieldSymbol.ContainingType)}.{fieldSymbol.Name}")
+                ? SymbolExpression.FromString($"{BuildTypeAccess(fieldSymbol.ContainingType, ctx)}.{fieldSymbol.Name}")
                 : SymbolExpression.FromString($"self.{fieldSymbol.Name}"),
             IPropertySymbol propertySymbol => propertySymbol.IsStatic
-                ? SymbolExpression.FromString($"{ctx.GetTypeName(propertySymbol.ContainingType)}.{propertySymbol.Name}")
+                ? SymbolExpression.FromString($"{BuildTypeAccess(propertySymbol.ContainingType, ctx)}.{propertySymbol.Name}")
                 : SymbolExpression.FromString($"self.{propertySymbol.Name}"),
             IEventSymbol eventSymbol => eventSymbol.IsStatic
-                ? SymbolExpression.FromString($"{ctx.GetTypeName(eventSymbol.ContainingType)}.{eventSymbol.Name}")
+                ? SymbolExpression.FromString($"{BuildTypeAccess(eventSymbol.ContainingType, ctx)}.{eventSymbol.Name}")
                 : SymbolExpression.FromString($"self.{eventSymbol.Name}"),
             IMethodSymbol methodSymbol when IsMethodGroupContext(syntax) => BuildMethodGroupExpression(syntax, methodSymbol, ctx),
             IDiscardSymbol => SymbolExpression.FromString(RobloxCS.Luau.AstUtility.DiscardName.Text),
@@ -1340,7 +1338,7 @@ internal static Expression HandleImplicitObjectCreationExpressionLegacy(Implicit
             }
 
             if (symbol.ContainingType is not null && symbol.IsStatic) {
-                return $"{ctx.GetTypeName(symbol.ContainingType)}.{symbol.Name}";
+                return $"{BuildTypeAccess(symbol.ContainingType, ctx)}.{symbol.Name}";
             }
 
             if (!symbol.IsStatic) {
@@ -1377,13 +1375,13 @@ internal static Expression HandleImplicitObjectCreationExpressionLegacy(Implicit
 
         return symbol switch {
             IMethodSymbol methodSymbol => methodSymbol.IsStatic
-                ? $"{ctx.GetTypeName(methodSymbol.ContainingType)}.{methodSymbol.Name}"
+                ? $"{BuildTypeAccess(methodSymbol.ContainingType, ctx)}.{methodSymbol.Name}"
                 : $"self:{methodSymbol.Name}",
             IFieldSymbol fieldSymbol => fieldSymbol.IsStatic
-                ? $"{ctx.GetTypeName(fieldSymbol.ContainingType)}.{fieldSymbol.Name}"
+                ? $"{BuildTypeAccess(fieldSymbol.ContainingType, ctx)}.{fieldSymbol.Name}"
                 : $"self.{fieldSymbol.Name}",
             IPropertySymbol propertySymbol => propertySymbol.IsStatic
-                ? $"{ctx.GetTypeName(propertySymbol.ContainingType)}.{propertySymbol.Name}"
+                ? $"{BuildTypeAccess(propertySymbol.ContainingType, ctx)}.{propertySymbol.Name}"
                 : $"self.{propertySymbol.Name}",
             ILocalSymbol localSymbol => localSymbol.Name,
             IParameterSymbol parameterSymbol => parameterSymbol.Name,
@@ -1394,19 +1392,8 @@ internal static Expression HandleImplicitObjectCreationExpressionLegacy(Implicit
 
     private static string BuildTypeAccess(INamedTypeSymbol typeSymbol, TranspilationContext ctx)
     {
-        var typeName = ctx.GetTypeName(typeSymbol);
-
-        var containingNamespace = typeSymbol.ContainingNamespace;
-        if (containingNamespace is { IsGlobalNamespace: false })
-        {
-            var namespaceName = containingNamespace.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-            if (!string.IsNullOrWhiteSpace(namespaceName))
-            {
-                return $"{namespaceName}.{typeName}";
-            }
-        }
-
-        return typeName;
+        ctx.AddDependency(typeSymbol);
+        return ctx.GetTypeName(typeSymbol);
     }
 
     internal static string GetSimpleName(SimpleNameSyntax simpleName) {
@@ -1457,12 +1444,14 @@ internal static Expression HandleObjectCreationExpressionLegacy(ObjectCreationEx
             return BuildTableConstructor(syntax.Initializer, ctx);
         }
 
-        if (IsDictionaryType(typeSymbol)) {
-            return TableConstructor.Empty();
-        }
+
 
         var namedTypeSymbol = typeSymbol as INamedTypeSymbol;
-        var typeName = namedTypeSymbol?.Name ?? syntax.Type.ToString();
+        if (namedTypeSymbol != null)
+        {
+             ctx.AddDependency(namedTypeSymbol);
+        }
+        var typeName = namedTypeSymbol != null ? BuildTypeAccess(namedTypeSymbol, ctx) : syntax.Type.ToString();
 
         var arguments = syntax.ArgumentList?.Arguments
             .Select(argument => BuildFromSyntax(argument.Expression, ctx))
@@ -1475,7 +1464,11 @@ internal static Expression HandleObjectCreationExpressionLegacy(ObjectCreationEx
     {
         var typeInfo = ctx.Semantics.GetTypeInfo(syntax);
         var typeSymbol = typeInfo.Type as INamedTypeSymbol;
-        var typeName = typeSymbol?.Name ?? syntax.Type.ToString();
+        if (typeSymbol != null)
+        {
+             ctx.AddDependency(typeSymbol);
+        }
+        var typeName = typeSymbol != null ? BuildTypeAccess(typeSymbol, ctx) : syntax.Type.ToString();
 
         var arguments = syntax.ArgumentList?.Arguments
             .Select(argument => BuildFromSyntax(argument.Expression, ctx))
@@ -1490,7 +1483,11 @@ internal static Expression HandleObjectCreationExpressionLegacy(ObjectCreationEx
         TranspilationContext ctx)
     {
         var namedTypeSymbol = typeSymbol as INamedTypeSymbol;
-        var typeName = namedTypeSymbol?.Name ?? namedTypeSymbol?.ToDisplayString() ?? "Anonymous";
+        if (namedTypeSymbol != null)
+        {
+             ctx.AddDependency(namedTypeSymbol);
+        }
+        var typeName = namedTypeSymbol != null ? BuildTypeAccess(namedTypeSymbol, ctx) : (namedTypeSymbol?.ToDisplayString() ?? "Anonymous");
 
         var arguments = syntax.ArgumentList?.Arguments
             .Select(argument => BuildFromSyntax(argument.Expression, ctx))

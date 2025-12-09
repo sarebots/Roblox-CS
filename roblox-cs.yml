@@ -1,0 +1,13 @@
+# roblox-cs project configuration
+# Update these paths to match your project layout.
+SourceFolder: src
+OutputFolder: out
+RojoProjectName: default
+EntryPointArguments: []
+RojoServePort: 34872
+Plugins: []
+EnableUnityAliases: false
+Macro:
+  EnableIteratorHelpers: true
+  EnableMathMacros: true
+  EnableBit32Macros: true

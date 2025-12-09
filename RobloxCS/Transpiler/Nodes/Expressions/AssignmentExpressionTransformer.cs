@@ -248,31 +248,48 @@ internal static class AssignmentExpressionTransformer
         IMethodSymbol methodSymbol)
     {
         var connectionName = GetOrCreateConnectionName(eventSymbol, assignment);
+        var targetName = !eventSymbol.IsStatic ? $"self.{connectionName}" : connectionName;
         var callback = BuildEventCallbackExpression(methodSymbol, assignment.Right, ctx);
         var eventTarget = ExpressionBuilder.BuildAccessString(assignment.Left, ctx);
         var connectCall = FunctionCallAst.Basic($"{eventTarget}:Connect", callback);
 
-        var connectionSymbol = SymbolExpression.FromString(connectionName);
+        var connectionSymbol = SymbolExpression.FromString(targetName);
 
         if (assignment.OperatorToken.IsKind(SyntaxKind.PlusEqualsToken))
         {
             var disconnectsInside = CallbackDisconnectsItself(callback, connectionName);
 
-            Statement statement = disconnectsInside
-                ? BuildScopedConnectionDeclaration(connectionName, connectCall)
-                : new LocalAssignment
+            Statement statement;
+            if (disconnectsInside)
+            {
+                 statement = BuildScopedConnectionDeclaration(targetName, connectCall);
+            }
+            else if (!eventSymbol.IsStatic)
+            {
+                statement = new Assignment
                 {
+                    Vars = [VarName.FromString(targetName)],
+                    Expressions = [connectCall]
+                };
+            }
+            else
+            {
+                 // Static events: stick to local for now, but really should be module-scoped upvalue.
+                 // Assuming existing behavior for static usage.
+                 statement = new LocalAssignment
+                 {
                     Names = [connectionSymbol],
                     Expressions = [connectCall],
                     Types = [],
-                };
+                 };
+            }
 
             return new AssignmentLoweringResult([statement], connectionSymbol);
         }
 
         if (assignment.OperatorToken.IsKind(SyntaxKind.MinusEqualsToken))
         {
-            var disconnectCall = FunctionCallAst.Basic($"{connectionName}:Disconnect");
+            var disconnectCall = FunctionCallAst.Basic($"{targetName}:Disconnect");
             var callStatement = CreateCallStatement(disconnectCall);
             return new AssignmentLoweringResult([callStatement], disconnectCall);
         }

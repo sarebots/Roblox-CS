@@ -341,6 +341,32 @@ CS.Async = CS.async
 CS.Await = CS.await
 
 local List = {}
+List.__index = List 
+
+function List.new()
+	return setmetatable({}, List)
+end
+
+function List:Add(item)
+	table.insert(self, item)
+end
+
+function List:Remove(item)
+	local index = table.find(self, item)
+	if index then
+		table.remove(self, index)
+		return true
+	end
+	return false
+end
+
+function List:Contains(item)
+	return table.find(self, item) ~= nil
+end
+
+function List:Clear()
+	table.clear(self)
+end
 
 function List.slice(source, startIndex, length)
 	if typeof(source) ~= "table" then
@@ -371,7 +397,48 @@ function List.slice(source, startIndex, length)
 	return result
 end
 
+CS.defineGlobal("List", List)
 CS.List = List
+
+local Dictionary = {}
+Dictionary.__index = Dictionary
+
+function Dictionary.new()
+	return setmetatable({}, Dictionary)
+end
+
+function Dictionary:Add(key, value)
+	self[key] = value
+end
+
+function Dictionary:Remove(key)
+	local exists = self[key] ~= nil
+	self[key] = nil
+	return exists
+end
+
+function Dictionary:ContainsKey(key)
+	return self[key] ~= nil
+end
+
+function Dictionary:TryGetValue(key, outCallback)
+	local val = self[key]
+	if val ~= nil then
+		if outCallback then outCallback(val) end
+		return true
+	end
+	if outCallback then outCallback(nil) end
+	return false
+end
+
+function Dictionary:Clear()
+	for k in pairs(self) do
+		self[k] = nil
+	end
+end
+
+CS.defineGlobal("Dictionary", Dictionary)
+CS.Dictionary = Dictionary
 
 local Struct = {}
 
