@@ -45,6 +45,12 @@
 ### 1. Installation
 Download the latest release or build from source using the .NET SDK.
 
+**Running from Source:**
+If you clone the repo, build it first (`dotnet build`), then create an alias to run commands:
+```bash
+alias roblox-cs="dotnet $(pwd)/RobloxCS.CLI/bin/Debug/net9.0/RobloxCS.CLI.dll"
+```
+
 ### 2. Create a Project
 Use the CLI to scaffold a new project. You can use the built-in "Unity Roll-a-Ball" template to see how the Unity aliases work.
 

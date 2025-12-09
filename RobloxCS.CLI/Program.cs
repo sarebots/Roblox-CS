@@ -92,7 +92,7 @@ internal static class Program
             var template = catalog.GetById(opts.TemplateId);
 
             var destination = string.IsNullOrWhiteSpace(opts.Directory)
-                ? Path.Combine(Directory.GetCurrentDirectory(), template.Id)
+                ? Path.Combine(Directory.GetCurrentDirectory(), !string.IsNullOrWhiteSpace(opts.ProjectName) ? opts.ProjectName : template.Id)
                 : Path.GetFullPath(opts.Directory);
 
             var inferredName = !string.IsNullOrWhiteSpace(opts.ProjectName)
