@@ -11,7 +11,7 @@ internal static class InterpolatedStringExpressionTransformer
 {
     public static void Register()
     {
-        TransformerRegistry.RegisterExpressionTransformer(SyntaxKind.InterpolatedStringExpression, Transform);
+        // TransformerRegistry.RegisterExpressionTransformer(SyntaxKind.InterpolatedStringExpression, Transform);
     }
 
     private static Expression Transform(TransformContext context, ExpressionSyntax node)

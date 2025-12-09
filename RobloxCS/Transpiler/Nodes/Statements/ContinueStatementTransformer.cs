@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using RobloxCS.AST;
 using RobloxCS.AST.Statements;
+using RobloxCS.AST.Expressions;
 
 namespace RobloxCS.TranspilerV2.Nodes.Statements;
 
@@ -15,9 +16,16 @@ internal static class ContinueStatementTransformer
 
     private static Statement Transform(TranspilationContext context, StatementSyntax node)
     {
-        // Lua doesn't have 'continue' until recently (Luau does).
+        if (context.IsInsideTryScope)
+        {
+            context.MarkContinueEncountered();
+            return Return.FromExpressions([
+                SymbolExpression.FromString("CS.TRY_CONTINUE"),
+                FunctionCall.Basic("table.pack"),
+            ]);
+        }
+
         // Roblox Luau supports 'continue'.
-        context.MarkContinueEncountered();
         return new Continue();
     }
 }

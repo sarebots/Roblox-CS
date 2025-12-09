@@ -265,7 +265,6 @@ public static class Main
 
         var cliDll = Path.Combine(
             repoRoot,
-            "roblox-cs",
             "RobloxCS.CLI",
             "bin",
             configurationDirectory.Name,

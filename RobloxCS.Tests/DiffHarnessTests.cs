@@ -24,7 +24,7 @@ public class DiffHarnessTests
         var dotnetExe = ResolveDotnet();
         var psi = new ProcessStartInfo(dotnetExe)
         {
-            Arguments = $"run --project \"{toolProject}\" \"{legacyPath}\" \"{v2Path}\"",
+            Arguments = $"run --no-build --project \"{toolProject}\" \"{legacyPath}\" \"{v2Path}\"",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
@@ -65,22 +65,6 @@ public class DiffHarnessTests
 
     private static string ResolveDotnet()
     {
-        var candidate = Environment.GetEnvironmentVariable("DOTNET");
-        if (!string.IsNullOrWhiteSpace(candidate))
-        {
-            return candidate;
-        }
-
-        var home = Environment.GetEnvironmentVariable("HOME");
-        if (!string.IsNullOrWhiteSpace(home))
-        {
-            var dotnetFromHome = Path.Combine(home, ".dotnet", "dotnet");
-            if (File.Exists(dotnetFromHome))
-            {
-                return dotnetFromHome;
-            }
-        }
-
         return "dotnet";
     }
 

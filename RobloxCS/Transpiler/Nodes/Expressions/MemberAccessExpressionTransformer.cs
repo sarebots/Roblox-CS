@@ -10,7 +10,7 @@ internal static class MemberAccessExpressionTransformer
 {
     public static void Register()
     {
-        TransformerRegistry.RegisterExpressionTransformer(SyntaxKind.SimpleMemberAccessExpression, Transform);
+        // TransformerRegistry.RegisterExpressionTransformer(SyntaxKind.SimpleMemberAccessExpression, Transform);
     }
 
     private static Expression Transform(TransformContext context, ExpressionSyntax node)

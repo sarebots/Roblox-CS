@@ -4549,7 +4549,7 @@ public class TranspilerV2Tests
         var normalizedRendered = NormalizeLuau(rendered);
 
         Assert.Contains("local _optional_target = self._helper", normalizedRendered, StringComparison.Ordinal);
-        Assert.Contains("_optional_target ~= nil", normalizedRendered, StringComparison.Ordinal);
+        Assert.Contains("if _optional_target == nil then return nil end", normalizedRendered, StringComparison.Ordinal);
         Assert.Contains("_optional_target:Ping()", normalizedRendered, StringComparison.Ordinal);
         Assert.Contains("local _Ping = self._helper", normalizedLegacy, StringComparison.Ordinal);
     }

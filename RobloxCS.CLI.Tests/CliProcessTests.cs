@@ -44,7 +44,6 @@ public class CliProcessTests
         var configurationDirectory = tfmDirectory.Parent ?? throw new InvalidOperationException("Unable to determine configuration directory from test context.");
         var cliDll = Path.Combine(
             RepoRoot,
-            "roblox-cs",
             "RobloxCS.CLI",
             "bin",
             configurationDirectory.Name,

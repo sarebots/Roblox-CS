@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using RobloxCS.AST;
 using RobloxCS.AST.Statements;
+using RobloxCS.AST.Expressions;
 
 namespace RobloxCS.TranspilerV2.Nodes.Statements;
 
@@ -15,7 +16,15 @@ internal static class BreakStatementTransformer
 
     private static Statement Transform(TranspilationContext context, StatementSyntax node)
     {
-        context.MarkBreakEncountered();
+        if (context.IsInsideTryScope)
+        {
+            context.MarkBreakEncountered();
+            return Return.FromExpressions([
+                SymbolExpression.FromString("CS.TRY_BREAK"),
+                FunctionCall.Basic("table.pack"),
+            ]);
+        }
+
         return new Break();
     }
 }

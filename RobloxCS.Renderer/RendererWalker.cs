@@ -547,10 +547,35 @@ public class RendererWalker : AstVisitorBase {
     }
 
     public override void VisitIndexExpression(IndexExpression node) {
-        Visit(node.Target);
-        _state.Builder.Append('[');
-        Visit(node.Index);
-        _state.Builder.Append(']');
+        if (node.Index is StringExpression str && IsValidLuaIdentifier(str.Value)) {
+            Visit(node.Target);
+            _state.Builder.Append('.');
+            _state.Builder.Append(str.Value);
+        } else {
+            Visit(node.Target);
+            _state.Builder.Append('[');
+            Visit(node.Index);
+            _state.Builder.Append(']');
+        }
+    }
+
+    private static bool IsValidLuaIdentifier(string name) {
+        if (string.IsNullOrEmpty(name)) return false;
+        if (!char.IsLetter(name[0]) && name[0] != '_') return false;
+        for (int i = 1; i < name.Length; i++) {
+            if (!char.IsLetterOrDigit(name[i]) && name[i] != '_') return false;
+        }
+        return !IsLuaKeyword(name);
+    }
+
+    private static bool IsLuaKeyword(string name) {
+        return name switch {
+            "and" or "break" or "do" or "else" or "elseif" or "end" or "false" or "for" or "function" or "if" or
+            "in" or "local" or "nil" or "not" or "or" or "repeat" or "return" or "then" or "true" or "until" or "while" or
+            "continue" // Luau specific
+            => true,
+            _ => false
+        };
     }
 
     public override void VisitNumberExpression(NumberExpression node) {
