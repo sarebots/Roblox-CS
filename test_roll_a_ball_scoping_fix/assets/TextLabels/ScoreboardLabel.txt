@@ -1,0 +1,4 @@
+Scoreboard Title: RollABall
+Instructions:
+- Collect the glowing orbs to increase your score.
+- Stay on the platform; falling resets your progress.

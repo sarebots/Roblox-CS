@@ -312,7 +312,7 @@ public sealed class TranspilationContext {
             return;
         }
 
-        var requireCall = FunctionCall.Basic("require", SymbolExpression.FromString("rbxcs_include.GoodSignal"));
+        var requireCall = FunctionCall.Basic("require", SymbolExpression.FromString("rbxcs_include.Signal"));
         var assignment = new LocalAssignment
         {
             Names = [SymbolExpression.FromString("Signal")],
@@ -325,6 +325,11 @@ public sealed class TranspilationContext {
     }
 
     private void NormalizeReturnStatements() {
+        if (RootBlock.Statements.Count > 0 && RootBlock.Statements[^1] is Return)
+        {
+            return;
+        }
+
         var nilReturnIndices = RootBlock.Statements
             .Select((statement, index) => (statement, index))
             .Where(tuple => tuple.statement is Return ret
@@ -374,16 +379,13 @@ public sealed class TranspilationContext {
 
     public void AddDependency(INamedTypeSymbol symbol)
     {
+        // Logger.Info($"AddDependency: {symbol.Name}");
         if (symbol.ContainingAssembly.Name != Compilation.AssemblyName)
         {
-            // For now, only track dependencies within the same compilation
-            // External references would need config mapping
              _dependencies.Add(symbol);
              return;
         }
 
-        // Check if the symbol is defined in the current file options
-        // This is a rough check. Ideally we compare syntax trees.
         if (symbol.Locations.Any(loc => loc.SourceTree == Root.SyntaxTree))
         {
             return;
@@ -395,6 +397,8 @@ public sealed class TranspilationContext {
     private void GenerateImports()
     {
         if (Options.RojoProject is null) return;
+        
+        // Logger.Info($"GenerateImports: {_dependencies.Count} dependencies for {Root.SyntaxTree.FilePath}");
 
         var currentFilePath = Root.SyntaxTree.FilePath;
         var imports = new Dictionary<string, string>(StringComparer.Ordinal); // ClassName -> Path
@@ -406,7 +410,7 @@ public sealed class TranspilationContext {
 
         if (_signalImportAdded)
         {
-            var includePath = "game:GetService(\"ReplicatedStorage\"):WaitForChild(\"include\")";
+            var includePath = "game:GetService(\"ReplicatedStorage\"):WaitForChild(\"Include\")";
             var includeStmt = new LocalAssignment
             {
                 Names = [SymbolExpression.FromString("rbxcs_include")],
@@ -469,7 +473,7 @@ public sealed class TranspilationContext {
                                  // For now, dot access.
                                  // Correction: Use WaitForChild for cross-directory if safest, but messy.
                                  // Let's use ["Name"] or .Name.
-                                 builder.Append($".{part}");
+                                 // builder.Append($".{part}"); // FIXED: Removed redundant append
                              }
                          }
                          

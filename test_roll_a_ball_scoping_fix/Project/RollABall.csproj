@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+  <RootNamespace>RollABall</RootNamespace>
+
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+</Project>

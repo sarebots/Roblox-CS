@@ -1,0 +1,14 @@
+{
+  "name": "RollABall",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$path": "out"
+    },
+    "ServerScriptService": {
+      "Runner": {
+        "$path": "src/Runner.server.lua"
+      }
+    }
+  }
+}

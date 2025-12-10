@@ -291,7 +291,21 @@ internal static class AssignmentExpressionTransformer
         {
             var disconnectCall = FunctionCallAst.Basic($"{targetName}:Disconnect");
             var callStatement = CreateCallStatement(disconnectCall);
-            return new AssignmentLoweringResult([callStatement], disconnectCall);
+            
+            var condition = new BinaryOperatorExpression
+            {
+                Left = SymbolExpression.FromString(targetName),
+                Op = BinOp.TildeEqual,
+                Right = SymbolExpression.FromString("nil"),
+            };
+
+            var ifStatement = new If
+            {
+                Condition = condition,
+                ThenBody = WrapInBlock(callStatement),
+            };
+
+            return new AssignmentLoweringResult([ifStatement], SymbolExpression.FromString("nil"));
         }
 
         throw new NotSupportedException($"Unsupported event assignment operator '{assignment.OperatorToken.Text}'.");
@@ -460,6 +474,13 @@ internal static class AssignmentExpressionTransformer
         }
 
         return false;
+    }
+
+    private static Block WrapInBlock(Statement statement)
+    {
+        var block = Block.Empty();
+        block.AddStatement(statement);
+        return block;
     }
 
     private static bool IsSystemNamespace(INamespaceSymbol? namespaceSymbol)

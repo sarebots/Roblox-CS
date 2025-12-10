@@ -67,9 +67,24 @@ public class ExpressionBuilder {
             CastExpressionSyntax castExpression => BuildFromSyntax(castExpression.Expression, ctx),
             ConditionalAccessExpressionSyntax conditionalAccessSyntax => HandleConditionalAccessExpressionLegacy(conditionalAccessSyntax, ctx),
             InterpolatedStringExpressionSyntax interpolatedStringSyntax => HandleInterpolatedStringExpression(interpolatedStringSyntax, ctx),
+            ConditionalExpressionSyntax conditionalSyntax => HandleConditionalExpression(conditionalSyntax, ctx),
             TupleExpressionSyntax tupleExpressionSyntax => HandleTupleExpression(tupleExpressionSyntax, ctx),
 
             _ => throw new NotSupportedException($"Expression {syntax.Kind()} is not supported. {syntax}"),
+        };
+    }
+
+    private static Expression HandleConditionalExpression(ConditionalExpressionSyntax syntax, TranspilationContext ctx)
+    {
+        var condition = BuildFromSyntax(syntax.Condition, ctx);
+        var whenTrue = BuildFromSyntax(syntax.WhenTrue, ctx);
+        var whenFalse = BuildFromSyntax(syntax.WhenFalse, ctx);
+
+        return new IfExpression
+        {
+            Condition = condition,
+            TrueValue = whenTrue,
+            FalseValue = whenFalse
         };
     }
 
@@ -331,30 +346,6 @@ internal static Expression HandleCollectionExpressionLegacy(CollectionExpression
         }
 
         return false;
-    }
-
-internal static Expression HandleImplicitObjectCreationExpressionLegacy(ImplicitObjectCreationExpressionSyntax syntax, TranspilationContext ctx) {
-        var typeInfo = ctx.Semantics.GetTypeInfo(syntax);
-        var typeSymbol = typeInfo.Type;
-
-        if (syntax.Initializer is not null) {
-            if (IsDictionaryType(typeSymbol)) {
-                return BuildDictionaryInitializer(syntax.Initializer, ctx);
-            }
-
-            return BuildTableConstructor(syntax.Initializer, ctx);
-        }
-
-
-
-        var namedTypeSymbol = typeSymbol as INamedTypeSymbol;
-        var typeName = namedTypeSymbol?.Name ?? namedTypeSymbol?.ToDisplayString() ?? "Anonymous";
-
-        var arguments = syntax.ArgumentList?.Arguments
-            .Select(argument => BuildFromSyntax(argument.Expression, ctx))
-            .ToArray() ?? Array.Empty<Expression>();
-
-        return FunctionCallAst.Basic($"{typeName}.new", arguments);
     }
 
     private static Expression HandleParenthesizedLambda(ParenthesizedLambdaExpressionSyntax syntax, TranspilationContext ctx) {
@@ -811,8 +802,14 @@ internal static Expression HandleImplicitObjectCreationExpressionLegacy(Implicit
         }
 
         var symbol = ctx.Semantics.GetSymbolInfo(syntax).Symbol;
+
         if (symbol is IMethodSymbol methodSymbol && IsMethodGroupContext(syntax)) {
             return BuildMethodGroupExpression(syntax, methodSymbol, ctx);
+        }
+
+        if (symbol is INamedTypeSymbol typeSymbol)
+        {
+            return SymbolExpression.FromString(BuildTypeAccess(typeSymbol, ctx));
         }
 
         if (symbol is IEventSymbol eventSymbol)
@@ -882,6 +879,11 @@ internal static Expression HandleImplicitObjectCreationExpressionLegacy(Implicit
             return true;
         }
 
+        if (TryBuildNameof(syntax, ctx, out expression))
+        {
+            return true;
+        }
+
         if (ctx.Semantics.GetSymbolInfo(syntax.Expression).Symbol is not IMethodSymbol methodSymbol)
         {
             return false;
@@ -897,6 +899,11 @@ internal static Expression HandleImplicitObjectCreationExpressionLegacy(Implicit
             return true;
         }
 
+        if (TryBuildUnityAliasesInvocation(syntax, ctx, methodSymbol, out expression))
+        {
+            return true;
+        }
+
         if (TryBuildIDivInvocation(syntax, ctx, methodSymbol, out expression))
         {
             return true;
@@ -907,6 +914,162 @@ internal static Expression HandleImplicitObjectCreationExpressionLegacy(Implicit
             return true;
         }
 
+        if (TryBuildStringMacro(syntax, ctx, methodSymbol, out expression))
+        {
+            return true;
+        }
+
+        if (TryBuildGlobalsInvocation(syntax, ctx, methodSymbol, out expression))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryBuildGlobalsInvocation(
+        InvocationExpressionSyntax syntax,
+        TranspilationContext ctx,
+        IMethodSymbol methodSymbol,
+        out Expression expression)
+    {
+        expression = null!;
+
+        if (methodSymbol.ContainingType.Name != "Globals" ||
+            (methodSymbol.ContainingType.ContainingNamespace?.Name != "Roblox" &&
+             methodSymbol.ContainingType.ContainingNamespace?.ToDisplayString() != "Roblox"))
+        {
+            return false;
+        }
+
+        string? luaFunction = methodSymbol.Name switch
+        {
+            "print" => "print",
+            "pcall" => "pcall",
+            "pairs" => "pairs",
+            "ipairs" => "ipairs",
+            "typeIs" => "CS.typeIs",
+            "classIs" => "CS.classIs",
+            _ => null
+        };
+
+        if (luaFunction == null)
+            return false;
+
+        var args = syntax.ArgumentList.Arguments.Select(a => BuildFromSyntax(a.Expression, ctx));
+        expression = FunctionCallAst.Basic(luaFunction, args.ToArray());
+        return true;
+    }
+
+    private static bool TryBuildUnityAliasesInvocation(
+        InvocationExpressionSyntax syntax,
+        TranspilationContext ctx,
+        IMethodSymbol methodSymbol,
+        out Expression expression)
+    {
+        expression = null!;
+
+        if (methodSymbol.ContainingType.Name != "UnityAliases" ||
+            (methodSymbol.ContainingType.ContainingNamespace?.Name != "Roblox" &&
+             methodSymbol.ContainingType.ContainingNamespace?.ToDisplayString() != "Roblox"))
+        {
+            return false;
+        }
+
+        string? luaFunction = methodSymbol.Name switch
+        {
+            "Log" => "print",
+            "LogWarning" => "warn",
+            "LogError" => "error",
+            _ => null
+        };
+
+        if (luaFunction == null)
+            return false;
+
+        var args = syntax.ArgumentList.Arguments.Select(a => BuildFromSyntax(a.Expression, ctx));
+        expression = FunctionCallAst.Basic(luaFunction, args.ToArray());
+        return true;
+    }
+
+    private static bool TryBuildStringMacro(
+        InvocationExpressionSyntax syntax,
+        TranspilationContext ctx,
+        IMethodSymbol methodSymbol,
+        out Expression expression)
+    {
+        expression = null!;
+
+        if (methodSymbol.ContainingType.SpecialType != SpecialType.System_String)
+        {
+            return false;
+        }
+
+        if (methodSymbol.Name == "IsNullOrWhiteSpace")
+        {
+            var argument = BuildFromSyntax(syntax.ArgumentList.Arguments[0].Expression, ctx);
+            
+            var isNil = new BinaryOperatorExpression {
+                Left = argument,
+                Op = BinOp.TwoEqual,
+                Right = SymbolExpression.FromString("nil")
+            };
+            
+            var matchPrefix = argument is SymbolExpression sym
+                ? (Prefix)new NamePrefix { Name = sym.Value }
+                : new ExpressionPrefix { Expression = (Expression)argument.DeepClone() };
+
+            var matchCall = new FunctionCall
+            {
+                Prefix = matchPrefix,
+                Suffixes = [
+                     new MethodCall {
+                         Name = "match",
+                         Args = new FunctionArgs {
+                             Arguments = [StringExpression.FromString("^%s*$")]
+                         }
+                     }
+                ]
+            };
+
+            var isWhitespace = new BinaryOperatorExpression {
+                Left = matchCall,
+                Op = BinOp.TildeEqual,
+                Right = SymbolExpression.FromString("nil")
+            };
+
+            expression = new BinaryOperatorExpression {
+                Left = isNil,
+                Op = BinOp.Or,
+                Right = isWhitespace
+            };
+            return true;
+        }
+
+        if (methodSymbol.Name == "IsNullOrEmpty")
+        {
+             var argument = BuildFromSyntax(syntax.ArgumentList.Arguments[0].Expression, ctx);
+             
+             var isNil = new BinaryOperatorExpression {
+                 Left = argument,
+                 Op = BinOp.TwoEqual,
+                 Right = SymbolExpression.FromString("nil")
+             };
+             
+             var isEmpty = new BinaryOperatorExpression {
+                 Left = (Expression)argument.DeepClone(),
+                 Op = BinOp.TwoEqual,
+                 Right = StringExpression.FromString("")
+             };
+             
+             expression = new BinaryOperatorExpression {
+                 Left = isNil,
+                 Op = BinOp.Or,
+                 Right = isEmpty
+             };
+             return true;
+        }
+        
         return false;
     }
 
@@ -1156,6 +1319,46 @@ internal static Expression HandleImplicitObjectCreationExpressionLegacy(Implicit
 
         var containingName = containingType.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat);
         return string.Equals(containingName, "Roblox.NumberExtensions", StringComparison.Ordinal);
+    }
+
+    private static bool TryBuildNameof(InvocationExpressionSyntax syntax, TranspilationContext ctx, out Expression expression)
+    {
+        expression = null!;
+
+        if (syntax.Expression is not IdentifierNameSyntax identifier || identifier.Identifier.ValueText != "nameof")
+        {
+            return false;
+        }
+
+        if (syntax.ArgumentList.Arguments.Count != 1)
+        {
+            return false;
+        }
+
+        var argument = syntax.ArgumentList.Arguments[0].Expression;
+        var symbol = ctx.Semantics.GetSymbolInfo(argument).Symbol;
+        
+        // nameof(x) uses the simple name of the symbol
+        if (symbol != null)
+        {
+            expression = StringExpression.FromString(symbol.Name);
+            return true;
+        }
+        
+        // Fallback for when semantics fail (e.g. valid C# but complex case), usually it's just the identifier text
+        if (argument is IdentifierNameSyntax id)
+        {
+             expression = StringExpression.FromString(id.Identifier.ValueText);
+             return true;
+        }
+        
+        if (argument is MemberAccessExpressionSyntax memberAccess)
+        {
+             expression = StringExpression.FromString(memberAccess.Name.Identifier.ValueText);
+             return true;
+        }
+
+        return false;
     }
 
     private static bool TryBuildTSHelperInvocation(
@@ -1430,6 +1633,41 @@ internal static Expression HandleImplicitObjectCreationExpressionLegacy(Implicit
         var firstLine = rendered.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
         const string prefix = "return ";
         return firstLine.StartsWith(prefix, StringComparison.Ordinal) ? firstLine[prefix.Length..] : firstLine;
+    }
+    private static bool ShouldUseLegacyCtor(ITypeSymbol? symbol)
+    {
+        return symbol?.TypeKind == TypeKind.Array;
+    }
+
+    internal static Expression HandleImplicitObjectCreationExpressionLegacy(ImplicitObjectCreationExpressionSyntax syntax, TranspilationContext ctx)
+    {
+        var typeInfo = ctx.Semantics.GetTypeInfo(syntax);
+        var typeSymbol = typeInfo.Type;
+        
+        // Logger.Info($"ImplicitCreation: {typeSymbol?.Name ?? "null"}");
+
+        if (ShouldUseLegacyCtor(typeSymbol))
+        {
+            return FunctionCall.Basic("table.create", NumberExpression.From(0));
+        }
+
+        if (IsDictionaryType(typeSymbol)) {
+             return FunctionCall.Basic("Dictionary.new"); // Ensure Dictionary uses new
+        }
+
+        var namedTypeSymbol = typeSymbol as INamedTypeSymbol;
+        if (namedTypeSymbol != null)
+        {
+             // Logger.Info($"Adding dependency for implicit creation: {namedTypeSymbol.Name}");
+             ctx.AddDependency(namedTypeSymbol);
+        }
+        var typeName = namedTypeSymbol != null ? BuildTypeAccess(namedTypeSymbol, ctx) : (namedTypeSymbol?.ToDisplayString() ?? "Anonymous");
+
+        var arguments = syntax.ArgumentList?.Arguments
+            .Select(argument => BuildFromSyntax(argument.Expression, ctx))
+            .ToArray() ?? Array.Empty<Expression>();
+
+        return FunctionCallAst.Basic($"{typeName}.new", arguments);
     }
 
 internal static Expression HandleObjectCreationExpressionLegacy(ObjectCreationExpressionSyntax syntax, TranspilationContext ctx) {

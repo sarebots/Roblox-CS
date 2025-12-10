@@ -16,7 +16,7 @@ internal static class StaticMemberBuilder {
         TranspilationContext ctx,
         string className
     ) {
-        if (!fieldDeclaration.Modifiers.Any(SyntaxKind.StaticKeyword) || fieldDeclaration.Modifiers.Any(SyntaxKind.ConstKeyword)) {
+        if (!fieldDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.StaticKeyword) || m.IsKind(SyntaxKind.ConstKeyword))) {
             return Enumerable.Empty<Statement>();
         }
 

@@ -262,11 +262,18 @@ public class StatementBuilder {
 
     private static Statement BuildFromIfStmt(IfStatementSyntax ifStmt, TranspilationContext ctx) {
         var condition = ExpressionBuilder.BuildFromSyntax(ifStmt.Condition, ctx);
+        var conditionPrereqs = ctx.ConsumePrerequisites();
+
         var thenBlock = BuildNestedBlock(ifStmt.Statement, ctx);
 
         Block? elseBlock = null;
         if (ifStmt.Else is { Statement: { } elseSyntax }) {
             elseBlock = BuildNestedBlock(elseSyntax, ctx);
+        }
+
+        foreach (var prereq in conditionPrereqs)
+        {
+            ctx.AddPrerequisite(prereq);
         }
 
         return new If {
@@ -313,10 +320,16 @@ public class StatementBuilder {
 
     private static Statement BuildFromWhileStmt(WhileStatementSyntax whileStmt, TranspilationContext ctx) {
         var condition = ExpressionBuilder.BuildFromSyntax(whileStmt.Condition, ctx);
+        var conditionPrereqs = ctx.ConsumePrerequisites();
 
         ctx.LoopStack.Push(new LoopInfo());
         var body = BuildNestedBlock(whileStmt.Statement, ctx);
         ctx.LoopStack.Pop();
+
+        foreach (var prereq in conditionPrereqs)
+        {
+            ctx.AddPrerequisite(prereq);
+        }
 
         return new While {
             Condition = condition,
@@ -408,7 +421,14 @@ public class StatementBuilder {
 
     private static Statement BuildFromDoStmt(DoStatementSyntax doStmt, TranspilationContext ctx) {
         var condition = ExpressionBuilder.BuildFromSyntax(doStmt.Condition, ctx);
+        var conditionPrereqs = ctx.ConsumePrerequisites();
+
         var body = BuildNestedBlock(doStmt.Statement, ctx);
+
+        foreach (var prereq in conditionPrereqs)
+        {
+            ctx.AddPrerequisite(prereq);
+        }
 
         return new Repeat {
             Body = body,

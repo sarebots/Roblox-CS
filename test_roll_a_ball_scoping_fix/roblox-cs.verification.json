@@ -1,0 +1,36 @@
+{
+  "templateId": "unity-roll-a-ball",
+  "projectName": "RollABall",
+  "projectNamespace": "RollABall",
+  "startedAtUtc": "2025-12-10T08:16:04.929996Z",
+  "durationMs": 711.9685,
+  "succeeded": true,
+  "errorMessage": null,
+  "steps": [
+    {
+      "name": "transpile",
+      "status": "Success",
+      "message": "Transpile completed successfully.",
+      "startedAtUtc": "2025-12-10T08:16:04.930429Z",
+      "durationMs": 711.5069
+    }
+  ],
+  "projectMetadata": {
+    "projectRoot": "/Users/sarmad/Documents/Roblox-Unity/roblox-cs/test_roll_a_ball_scoping_fix",
+    "sourceDirectory": "/Users/sarmad/Documents/Roblox-Unity/roblox-cs/test_roll_a_ball_scoping_fix/src",
+    "outputDirectory": "/Users/sarmad/Documents/Roblox-Unity/roblox-cs/test_roll_a_ball_scoping_fix/out",
+    "rojoProjectName": "default",
+    "sourceFolder": "src",
+    "outputFolder": "out",
+    "enableUnityAliases": true,
+    "projectNamespace": "RollABall",
+    "namespaceHints": [
+      "Set \u003CRootNamespace\u003ERollABall\u003C/RootNamespace\u003E in \u0027RollABall.csproj\u0027.",
+      "Update runtime spec namespaces (under tests/runtime) if you add additional ones so verification continues to pass."
+    ],
+    "assemblyHints": [
+      "Update AssemblyTitle/AssemblyProduct attributes in \u0027AssemblyInfo.cs\u0027 to reflect RollABall.",
+      "Set \u003CAssemblyName\u003ERollABall\u003C/AssemblyName\u003E in \u0027RollABall.csproj\u0027 if you rename the project."
+    ]
+  }
+}

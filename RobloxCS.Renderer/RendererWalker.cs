@@ -438,6 +438,15 @@ public class RendererWalker : AstVisitorBase {
         Visit(node.Expression);
     }
 
+    public override void VisitIfExpression(IfExpression node) {
+        _state.Builder.Append("if ");
+        Visit(node.Condition);
+        _state.Builder.Append(" then ");
+        Visit(node.TrueValue);
+        _state.Builder.Append(" else ");
+        Visit(node.FalseValue);
+    }
+
     public override void VisitAnonymousFunction(AnonymousFunction node) {
         _state.Builder.Append("function");
         Visit(node.Body);
@@ -511,7 +520,7 @@ public class RendererWalker : AstVisitorBase {
 
     public override void VisitInterpolatedStringExpressionPart(InterpolatedStringExpressionPart node)
     {
-        _state.Builder.Append("${");
+        _state.Builder.Append('{');
         Visit(node.Expression);
         _state.Builder.Append('}');
     }

@@ -40,6 +40,7 @@ public interface IAstVisitor {
     void VisitNameKey(NameKey node);
     void VisitComputedKey(ComputedKey node);
     void VisitTypeAssertionExpression(TypeAssertionExpression node);
+    void VisitIfExpression(IfExpression node);
 
     void VisitGenericDeclaration(GenericDeclaration node);
     void VisitGenericDeclarationParameter(GenericDeclarationParameter node);
@@ -129,7 +130,8 @@ public interface IAstVisitor<out T> where T : AstNode {
     T VisitNameKey(NameKey node);
     T VisitComputedKey(ComputedKey node);
     T VisitTypeAssertionExpression(TypeAssertionExpression node);
-
+    T VisitIfExpression(IfExpression node);
+    
     T VisitGenericDeclaration(GenericDeclaration node);
     T VisitGenericDeclarationParameter(GenericDeclarationParameter node);
     T VisitGenericParameterInfo(GenericParameterInfo node);

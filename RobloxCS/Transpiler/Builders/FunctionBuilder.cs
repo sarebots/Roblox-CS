@@ -138,6 +138,7 @@ internal static class FunctionBuilder {
         TranspilationContext ctx
     ) {
         var block = Block.Empty();
+        InjectDefaultParameterValues(methodSymbol, block);
 
         if (bodySyntax is { } body) {
             if (!ContainsYieldStatements(body))
@@ -264,5 +265,55 @@ internal static class FunctionBuilder {
         }
 
         return baseType;
+    }
+
+    private static void InjectDefaultParameterValues(IMethodSymbol methodSymbol, Block block)
+    {
+        foreach (var parameter in methodSymbol.Parameters)
+        {
+            if (!parameter.HasExplicitDefaultValue || parameter.IsParams)
+            {
+                continue;
+            }
+
+            var parameterName = parameter.Name;
+            var defaultValue = parameter.ExplicitDefaultValue;
+            var defaultExpression = BuildConstantExpression(defaultValue);
+
+            var condition = new BinaryOperatorExpression
+            {
+                Left = SymbolExpression.FromString(parameterName),
+                Op = BinOp.TwoEqual,
+                Right = SymbolExpression.FromString("nil")
+            };
+
+            var assignment = new Assignment
+            {
+                Vars = [VarName.FromString(parameterName)],
+                Expressions = [defaultExpression]
+            };
+
+            var ifStmt = new If
+            {
+                Condition = condition,
+                ThenBody = new Block { Statements = [assignment] }
+            };
+
+            block.AddStatement(ifStmt);
+        }
+    }
+
+    private static Expression BuildConstantExpression(object? value)
+    {
+        return value switch
+        {
+            null => SymbolExpression.FromString("nil"),
+            bool b => new BooleanExpression { Value = b },
+            int i => NumberExpression.From(i),
+            float f => NumberExpression.From(f),
+            double d => NumberExpression.From(d),
+            string s => StringExpression.FromString(s),
+            _ => SymbolExpression.FromString("nil") // Fallback for unsupported types
+        };
     }
 }

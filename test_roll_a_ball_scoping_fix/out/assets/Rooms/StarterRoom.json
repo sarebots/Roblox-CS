@@ -1,0 +1,13 @@
+{
+  "name": "RollABallStarterRoom",
+  "description": "Placeholder Roll-a-Ball stage for RollABall until you replace it with Studio-authored assets.",
+  "layout": {
+    "platformRadius": 24,
+    "collectibleCount": 12,
+    "spawnPoints": [
+      "StarterArea",
+      "NorthArc",
+      "SouthArc"
+    ]
+  }
+}

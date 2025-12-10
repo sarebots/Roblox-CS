@@ -39,12 +39,13 @@ internal static class ClassBuilder {
         AddDependencyPredeclarations(predeclarations, ctx, classSymbol);
 
         var statements = new List<Statement>();
+        statements.AddRange(CreateCSRequire()); // Add require for CS
         statements.AddRange(predeclarations);
         statements.Add(DoStatement.FromBlock(BuildClassBody(ctx, node, classSymbol, className, ctorSymbol, shouldUseMetatable)));
         statements.AddRange(CreateInheritanceMetadataStatements(ctx, classSymbol, className));
         statements.Add(CreateDefineGlobalCall(className));
         statements.Add(CreateTypeAlias(ctx, classSymbol, className));
-        statements.Add(Return.FromExpressions([SymbolExpression.FromString("nil")]));
+        statements.Add(Return.FromExpressions([SymbolExpression.FromString(className)]));
 
         return statements;
     }
@@ -171,7 +172,7 @@ internal static class ClassBuilder {
                     break;
                 }
 
-                case FieldDeclarationSyntax fieldDeclaration when fieldDeclaration.Modifiers.Any(SyntaxKind.StaticKeyword): {
+                case FieldDeclarationSyntax fieldDeclaration when fieldDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.StaticKeyword) || m.IsKind(SyntaxKind.ConstKeyword)): {
                     foreach (var assignment in StaticMemberBuilder.CreateStaticFieldAssignments(classSymbol, fieldDeclaration, ctx, className)) {
                         orderedStatements.Add((i, assignment));
                     }
@@ -468,6 +469,86 @@ internal static class ClassBuilder {
                     },
                 },
             ],
+        };
+    }
+
+    private static IEnumerable<Statement> CreateCSRequire()
+    {
+        var gamePrefix = new NamePrefix { Name = "game" };
+        var getServiceCall = new MethodCall
+        {
+             Name = "GetService",
+             Args = new FunctionArgs { Arguments = [StringExpression.FromString("ReplicatedStorage")] }
+        };
+        var waitForIncludeCall = new MethodCall
+        {
+             Name = "WaitForChild",
+             Args = new FunctionArgs { Arguments = [StringExpression.FromString("Include")] }
+        };
+        var waitForRuntimeLibCall = new MethodCall
+        {
+             Name = "WaitForChild",
+             Args = new FunctionArgs { Arguments = [StringExpression.FromString("RuntimeLib")] }
+        };
+
+        var requireCall = new FunctionCall
+        {
+            Prefix = new NamePrefix { Name = "require" },
+            Suffixes = [
+               new AnonymousCall {
+                   Arguments = new FunctionArgs {
+                       Arguments = [
+                           new FunctionCall {
+                               Prefix = gamePrefix,
+                               Suffixes = [getServiceCall, waitForIncludeCall, waitForRuntimeLibCall]
+                           }
+                       ]
+                   }
+               }
+            ]
+        };
+        
+        yield return new LocalAssignment
+        {
+            Names = [SymbolExpression.FromString("CS")],
+            Expressions = [requireCall],
+            Types = []
+        };
+        
+        // local List = CS.List
+        yield return new LocalAssignment {
+            Names = [SymbolExpression.FromString("List")],
+            Expressions = [
+                new IndexExpression {
+                     Target = SymbolExpression.FromString("CS"),
+                     Index = StringExpression.FromString("List")
+                }
+            ],
+            Types = []
+        };
+        
+        // local Dictionary = CS.Dictionary
+        yield return new LocalAssignment {
+            Names = [SymbolExpression.FromString("Dictionary")],
+            Expressions = [
+                new IndexExpression {
+                     Target = SymbolExpression.FromString("CS"),
+                     Index = StringExpression.FromString("Dictionary")
+                }
+            ],
+            Types = []
+        };
+
+        // local Struct = CS.Struct
+        yield return new LocalAssignment {
+            Names = [SymbolExpression.FromString("Struct")],
+            Expressions = [
+                new IndexExpression {
+                     Target = SymbolExpression.FromString("CS"),
+                     Index = StringExpression.FromString("Struct")
+                }
+            ],
+            Types = []
         };
     }
 

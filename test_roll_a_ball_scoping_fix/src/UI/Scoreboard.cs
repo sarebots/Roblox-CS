@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace __PROJECT_NAMESPACE__.UI;
+namespace RollABall.UI;
 
 public sealed class Scoreboard
 {
